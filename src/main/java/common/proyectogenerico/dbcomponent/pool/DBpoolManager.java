@@ -1,5 +1,6 @@
-package common.proyectogenerico.dbcomponent;
+package common.proyectogenerico.dbcomponent.pool;
 
+import common.proyectogenerico.dbcomponent.core.*;
 import java.sql.*;
 
 //clase para manejar el pool (poolManager)
@@ -18,7 +19,7 @@ public class DBpoolManager {
         pool.initialize(config);
     }
 
-    //metodo para obtener conexion (no confundir con meto de DBImplementation)
+    //metodo para obtener conexion (no confundir con metodo de DBinterface)
     public Connection getConnection() throws SQLException {
         return pool.getConnection();
     }

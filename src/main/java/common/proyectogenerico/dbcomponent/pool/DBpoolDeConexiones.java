@@ -1,5 +1,6 @@
-package common.proyectogenerico.dbcomponent;
+package common.proyectogenerico.dbcomponent.pool;
 
+import common.proyectogenerico.dbcomponent.core.*;
 import java.sql.*;
 import java.util.*;
 
