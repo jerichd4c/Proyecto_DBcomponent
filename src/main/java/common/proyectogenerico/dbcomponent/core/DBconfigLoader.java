@@ -13,9 +13,9 @@ public class DBconfigLoader {
 
         try {
         
-        //buscar .properties desde el sitema de archivos
+        //buscar .properties desde el sistema de archivos
         if (input == null) {
-            File file = new File("src/main/resources/dbconfig.properties");
+            File file = new File("src/main/resources/" + path);
             if (file.exists()) {
             input = new FileInputStream(file);
             }   

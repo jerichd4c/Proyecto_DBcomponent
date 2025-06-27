@@ -15,7 +15,7 @@ public interface DBinterface {
 
     //ejectar consultas
     ResultSet ejecutarQuery (String query) throws SQLException;
-    int ejecutarUpdate (String query) throws SQLException;
+    int ejecutarUpdate (String query, Object... params) throws SQLException;
 
     //poolManager
     void inicializar() throws SQLException;
@@ -27,5 +27,10 @@ public interface DBinterface {
     //metodos auxiliares
     boolean probarConexion() throws SQLException;
     String conseguirVersionBDD () throws SQLException;
+
+    //metodo para obtener la informcion basica de la BDD
+    String getConexInfo() throws SQLException;
+    //identificador de la instancia de la BDD: getUniqueIdentifier va aqui
+    String getDBidentifier();
     
 }

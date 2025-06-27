@@ -4,6 +4,8 @@ import java.util.*;
 
 //clase que carga a configuracion de la Base de datos (sacado de: resources/DBConfig.properties)
 public class DBconfig {
+
+    private String DBname;
     private String url;
     private String user;
     private String password;
@@ -14,6 +16,14 @@ public class DBconfig {
     //nuevas variables para manejar N BDD
     private DBtype tipoDeBDD;
     private Properties propiedadesDriver = new Properties();
+
+    //metodo para obtener el nombre especifico de la BDD
+
+    public DBconfig getDBname(String DBname) {
+        this.DBname = DBname;
+        //retorna el nombre de la bdd que se esta usando
+        return this;
+    }
 
     //metodo para obtener el tipo de BDD
     public DBconfig getTipoDeBDD(DBtype bdd) {
@@ -55,7 +65,17 @@ public class DBconfig {
         return this;
     }
 
+    //IMPORTANTE: 
+    //metodo para obtener un identificador unico para la config especifica de la instancia de la BDD (BDD + url + DBname)
+    public String getUniqueIdentifier() {
+        return tipoDeBDD + "_" + url + "_" + DBname;
+    }
+
     //Getters para otros metodos
+
+    public String getDBname() {
+        return DBname;
+    }
     public String getUrl() {
         return url;
     }

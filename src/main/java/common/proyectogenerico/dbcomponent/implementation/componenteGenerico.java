@@ -58,10 +58,15 @@ public class componenteGenerico implements DBinterface {
     }
 
     //metodo para ejecutar actualizaciones
-    public int ejecutarUpdate(String query) throws SQLException {
+    //IMPORTANTE: Al poner el antes de params, se puede manejar la funcion varargs que permite pasar un numero indefinido de parametros
+    public int ejecutarUpdate(String query, Object... params) throws SQLException {
         try (Connection con = getConex();
-            Statement stmt = con.createStatement()) {
-            return stmt.executeUpdate(query);
+        //IMPORTANTE: Se tiene que preparar un statement para asi poder insertar dos variables en un campo de la tabla
+        PreparedStatement pstmt = con.prepareStatement(query)) {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+            return pstmt.executeUpdate();
         }
     }
 
@@ -124,7 +129,25 @@ public class componenteGenerico implements DBinterface {
         return config;
     }
 
-    
+//METODOS NUEVOS:
+
+    //metodo para conseguir el identificador de la instancia de la BDD
+
+    public String getDBidentifier() {
+        return config.getUniqueIdentifier();
+    }
+
+    //metodo para conseguir la info de la conexion a la BDD
+
+    public String getConexInfo() throws SQLException {
+        //se intenta el metodo getConex, si se retorna una conexion, se obtiene la info de la misma
+        try (Connection conex= getConex()) {
+            //formato esperado: String, String, String, String
+            //consigue: nombre de la 
+            return String.format ("%s, %s, %s, %s", conex.getMetaData().getDatabaseProductName(), conex.getCatalog(), config.getUrl(), conex.getMetaData().getDatabaseProductVersion());
+        }
+    }
+
     //auxiliar: 
 
     //metodo para verificar el tipo de BDD
