@@ -16,20 +16,13 @@ public class componenteGenerico implements DBinterface {
 
     //dos maneras de cargar la configuracion:
 
-    //constructor con parametros personalizados
-
-    public componenteGenerico() {
-        this.config = new DBconfig();
-        this.poolManager = new DBpoolManager();
-    }
-
     //constructor por defecto (sin parametros)
     //se usa cuando la configuracion viene de un archivo (.properties)
 
-    public componenteGenerico(DBconfig config) {
+    public componenteGenerico(DBconfig config) throws SQLException{
         //la config viene de una config proporcionada por el usuario, no el . properties (usar para pruebas)
         this.config = config;
-        this.poolManager = new DBpoolManager();
+        this.poolManager = new DBpoolManager(config);
     }
 
 //metodos para inicializar y cerrar:
@@ -62,9 +55,9 @@ public class componenteGenerico implements DBinterface {
     //metodo para ejecutar actualizaciones
     //IMPORTANTE: Al poner el antes de params, se puede manejar la funcion varargs que permite pasar un numero indefinido de parametros
     public int ejecutarUpdate(String query, Object... params) throws SQLException {
-        try (Connection con = getConex();
+        Connection con = getConex();
         //IMPORTANTE: Se tiene que preparar un statement para asi poder insertar dos variables en un campo de la tabla
-        PreparedStatement pstmt = con.prepareStatement(query)) {
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
@@ -98,13 +91,21 @@ public class componenteGenerico implements DBinterface {
 
     //metodo para terminar una transaccion
     private void terminarTransaccion() throws SQLException {
+        try {
+            //hacer si y solo si la transaccion esta en curso o no esta cerrada 
+        if (transaccionConex != null && !transaccionConex.isClosed()) {
+   
         //se hacen los cambios en la BDD
         transaccionConex.setAutoCommit(true);
-        //se devuelve la conexion al pool
-        poolManager.returnConnection(transaccionConex);
+        //se cierra la transsacion
+        transaccionConex.close();
+            }
+        //una vez que se termine la transaccion, se vacian las variables para volver a hacer otra
+        } finally {
         //se vacian las variables
         transaccionConex= null;
         transaccionEnCurso = false;
+        }
     }
 
     //metodo para realizar un rollback de una transaccion
@@ -144,13 +145,25 @@ public class componenteGenerico implements DBinterface {
     public String getConexInfo() throws SQLException {
         //se intenta el metodo getConex, si se retorna una conexion, se obtiene la info de la misma
         try (Connection conex= getConex()) {
+            //extraer nombre de la url para evitar confusiones
+            String DBname= extractDBname(config.getUrl());
             //formato esperado: String, String, String, String
             //consigue: nombre de la 
-            return String.format ("%s, %s, %s, %s", conex.getMetaData().getDatabaseProductName(), conex.getCatalog(), config.getUrl(), conex.getMetaData().getDatabaseProductVersion());
+            return String.format ("%s, %s, %s, %s", conex.getMetaData().getDatabaseProductName(), DBname, config.getUrl(), conex.getMetaData().getDatabaseProductVersion());
         }
     }
 
     //auxiliar: 
+
+    //metodo para extraer el nombre de la base de datos de la url
+
+    private String extractDBname(String url) {
+        //identificar por slash
+        if (url.contains("/")) {
+            return url.substring(url.lastIndexOf('/') + 1);
+        }
+        return "DB_desconocida";
+    }
 
     //metodo para verificar el tipo de BDD
     public String conseguirVersionBDD() throws SQLException {

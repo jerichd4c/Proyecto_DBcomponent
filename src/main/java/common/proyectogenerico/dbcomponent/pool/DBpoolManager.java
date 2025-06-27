@@ -5,12 +5,13 @@ import java.sql.*;
 
 //clase para manejar el pool (poolManager)
 public class DBpoolManager {
-    private DBpoolDeConexiones pool;
+    private final DBpoolDeConexiones pool;
     private DBconfig config;
 
-    //constructor del pool manager (usa metodo getInstance de DBpoolDeConexiones para verificar si el pool es singleton)
-    public DBpoolManager() {
-        this.pool = DBpoolDeConexiones.getInstance();
+    //constructor del pool manager (pool de conexiones usando config del DBconfig
+    public DBpoolManager(DBconfig config) throws SQLException{
+        this.pool = new DBpoolDeConexiones(config);
+        this.pool.initialize(config);
     }
 
     //metodo para crear el pool

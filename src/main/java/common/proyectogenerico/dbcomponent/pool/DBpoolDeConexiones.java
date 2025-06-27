@@ -5,24 +5,30 @@ import java.sql.*;
 import java.util.*;
 
 public class DBpoolDeConexiones {
-    //Singleton
-    private static DBpoolDeConexiones instancia;
+
     //Atributos
     private final LinkedList<Connection> conexionesDisponibles= new LinkedList<>();
     private final LinkedList<Connection> conexionesEnUso= new LinkedList<>();
     private DBconfig config;
 
     //construtor vacio para ya crear la instancia antes de todos los procesos
-    private DBpoolDeConexiones(){}
+    //private DBpoolDeConexiones(){}
 
-    //metodo para asegurar una sola instancia del pool por BDD
-    public static synchronized DBpoolDeConexiones getInstance() {
-        //si la instancia no existe, se crea
-        if (instancia == null) {
-            instancia = new DBpoolDeConexiones();
-        }
-        //si no, la devuelve
-        return instancia;
+    // //metodo para asegurar una sola instancia del pool por BDD
+    // public static synchronized DBpoolDeConexiones getInstance() {
+    //     //si la instancia no existe, se crea
+    //     if (instancia == null) {
+    //         instancia = new DBpoolDeConexiones();
+    //     }
+    //     //si no, la devuelve
+    //     return instancia;
+    // }
+
+    //nuevo constructor del pool de conexiones
+
+    public DBpoolDeConexiones(DBconfig config)  {
+        this.config= config;
+        
     }
 
     //metodo para iniciar el pool con la config inicial (.properties)
@@ -88,25 +94,25 @@ public class DBpoolDeConexiones {
             //si se remueve la conexion, se añadira a la lista enlazada de conexiones disponibles
             if (conexionesEnUso.remove(conn)) {
                 try {
-                    // isClosed SIN override
-                    if (conn.isClosed()) {
-                        conexionesDisponibles.add(crearConexionFisica());
-                    } else {
+
+                    //esperar 2 segundos si la conex no esta disponible
+                    if (!conn.isClosed() && !conn.isValid(2)) {
+                        //resetear la conexion del pool (se devuelve)
+                        //si no tiene el autocommit activo, lo activa
+                        if (!conn.getAutoCommit()) conn.setAutoCommit(true);
                         conexionesDisponibles.add(conn);
-                    }
-                } catch (SQLException e) {
-                    //si SQL arroja error, intentar de todas formas
-                    try {
+                    } else {
+                        //reemplazar conexion en caso de que fue invalida, intenta otra vez
                         conexionesDisponibles.add(crearConexionFisica());
+                        }
                     } catch (SQLException ex) {
                         //si no se puede crear una nueva conexion despues de intentar 3 metodos, error definitivo
-                        System.err.println("Error: " + e.getMessage());
+                        System.err.println("Error: " + ex.getMessage());
                     }
                     notifyAll();
                 }
             }
         }
-    }
     
     //metodo para desconectar el pool de conexiones de la BDD
     public synchronized void desconectarPool() throws SQLException {

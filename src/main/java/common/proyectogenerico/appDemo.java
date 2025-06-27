@@ -8,14 +8,26 @@ import java.sql.*;
 //demostracion del uso del DBcomponent
 public class appDemo {
     public static void main(String[] args) {
+
         //configurar dos BDD diferentes
         DBconfig config1 = DBconfigLoader.cargarConfig("/primarydbconfig.properties", DBtype.GENERICA);
         DBconfig config2 = DBconfigLoader.cargarConfig("/secondarydbconfig.properties", DBtype.GENERICA);
-        //crear los componentes
-       componenteGenerico primaryDB = new componenteGenerico(config1);
-       componenteGenerico secondaryDB = new componenteGenerico(config2);
-        
+
+
+        //declarar variables para no ser afectadas por try-catch y finally
+         componenteGenerico primaryDB = null;
+        componenteGenerico secondaryDB = null;
+
+
+
         try {
+
+        //crear los componentes
+
+        primaryDB = new componenteGenerico(config1);
+        secondaryDB = new componenteGenerico(config2);
+        
+
             //se inicializan los componentes
             primaryDB.inicializar();
             secondaryDB.inicializar();
@@ -44,15 +56,25 @@ public class appDemo {
         
         System.out.println("---Verificando base de datos---");
 
-        //info basica
+        //info basica:
 
-        System.out.println("Base de datos 1: " + bdd1.getConexInfo());
-        System.out.println("Base de datos 2: " + bdd2.getConexInfo());
+        //url
+
+        System.out.println("Base de datos 1: " + bdd1.getConfig().getUrl());
+        System.out.println("Base de datos 2: " + bdd2.getConfig().getUrl());
+
+        //extraer nombres de las BDDs de la url
+
+        String DBname1 = extractDBname(bdd1.getConfig().getUrl());
+        String DBname2 = extractDBname(bdd2.getConfig().getUrl());
+
+        System.out.println("Base de datos 1: " + DBname1);
+        System.out.println("Base de datos 2: " + DBname2);
 
         //diferentes casos para la verificacion
 
         //caso 1: si ambos componentes apuntan a la MISMA bdd (ej: dbcomp1 y 2 apuntan a bdd registro)
-        if (bdd1.getDBidentifier().equals(bdd2.getDBidentifier())) {
+        if (DBname1.equals(DBname2)) {
             System.out.println("Los DBcomponent apuntan a la MISMA BDD");
         } else {
             System.out.println("Los DBcomponent apuntan a DIFERENTES BDD");
@@ -74,7 +96,7 @@ public class appDemo {
         String insertarSQL = DBqueryManager.obtenerQueries("genericdb", "insert_usuario");
         bdd.ejecutarUpdate(insertarSQL, "Fulano Mengano", "superman@gmail.com");
         //metodo ejecutarUpdate se usa cuando se quiere actualizar por ejemplo, una tabla
-        System.out.println("Usuario 'fulano Mengano' insertado!");
+        System.out.println("Usuario 'Fulano Mengano' insertado!");
 
         //3. consultar usuario
         //manejar el query Con un resultSet
@@ -98,9 +120,9 @@ public class appDemo {
          System.out.println("Tabla 'registros' creada!");
 
          //2, insertar LOGs en BDD2
-         String insertarRegistro = DBqueryManager.obtenerQueries("genericdb", "insert_registros");
+         String insertarRegistro = DBqueryManager.obtenerQueries("genericdb", "insert_registro");
          bdd.ejecutarUpdate(insertarRegistro, 1, "login");
-         bdd.ejecutarUpdate(insertarRegistro, 1, "perfil_visto");
+         bdd.ejecutarUpdate(insertarRegistro, 2, "perfil_visto");
          System.out.println("Registros insertados!");
 
          //3. Consultar LOGs 
@@ -109,7 +131,7 @@ public class appDemo {
             System.out.println("Registros: ");
             //recorrer el resultSet hasta que ya no haya datos
             while (rs.next()) {
-                System.out.println(rs.getString("user_id") + " - " + rs.getString("accion") + " - " + rs.getTimestamp("timestamp"));
+                System.out.println(rs.getString("usuario_id") + " - " + rs.getString("accion") + " - " + rs.getTimestamp("timestamp"));
             }
         }
     }
@@ -130,9 +152,20 @@ public class appDemo {
             System.out.println("Usuario 'Yu Narukari' insertado!");
 
             //registrar creacion en BDD 2
-            String insertarRegistro = DBqueryManager.obtenerQueries("genericdb", "insert_registros");
-            secondaryDB.ejecutarUpdate(insertarRegistro, 5, "usuario_creado");
+            String insertarRegistro = DBqueryManager.obtenerQueries("genericdb", "insert_registro");
+            secondaryDB.ejecutarUpdate(insertarRegistro, 2, "usuario_creado");
             System.out.println("Registro de creacion insertado!");
+
+            //obtener el último ID insertado en usuarios
+            int ultimoUsuarioID;
+            try (ResultSet rs = primaryDB.ejecutarQuery("SELECT MAX(id) FROM usuarios")) {
+                rs.next();
+                //retorna el indice de la columna
+                ultimoUsuarioID = rs.getInt(1);
+            }
+
+            secondaryDB.ejecutarUpdate(insertarRegistro, ultimoUsuarioID, "usuario_creado");
+            System.out.println("Registro de creación 'usuario_creado' insertado!");
 
             //confirmar transacciones (commit)
             primaryDB.commitTransaccion();
@@ -143,6 +176,7 @@ public class appDemo {
             primaryDB.rollbackTransaccion();
             secondaryDB.rollbackTransaccion();
             System.out.println("Error en la transaccion, haciendo rollback!");
+            throw e;
         }
     }
 
@@ -152,13 +186,40 @@ public class appDemo {
         try {
         //bucle for que itera sobre todos los componentes
         for (componenteGenerico bdd : BDDs) {
-            //le hace CASCADE a las dos tablas para borrarlas
-            bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "delete_registros_viejos"));
-            bdd.cerrar();
-        }   
+            //si la BDD no esta vacia, borrar tablas
+            if (bdd !=null) {
+            try {
+                //le hace CASCADE a las dos tablas para borrarlas
+                //se ejecutan las actualizaciones en orden inverso a la creación (primero eliminar dependencias)
+
+                    bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "delete_tabla_registros"));
+
+                    bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "delete_tabla_usuarios"));
+
+                    bdd.cerrar();
+            } catch (SQLException e) {
+            System.out.println("Error limpiando BD " + bdd.getDBidentifier() + ": " + e.getMessage());
+                }   
+            }   
+        }
         System.out.println("datos y tablas limpiadas!");
-        } catch (SQLException e) {
+        } catch (Exception e) {
            System.out.println("ERROR: " + e.getMessage());
         }
+    }
+
+    //auxiliar: obtener nombre de la base de datos de la url
+
+    // Método auxiliar para extraer nombre de BD de la URL
+    private static String extractDBname(String url) {
+        if (url.contains("/")) {
+            String temp = url.substring(url.lastIndexOf('/') + 1);
+            // Eliminar parámetros adicionales (si los hay)
+            if (temp.contains("?")) {
+                return temp.substring(0, temp.indexOf('?'));
+            }
+            return temp;
+    }
+        return "DB_desconocida";
     }
 }
