@@ -1,4 +1,4 @@
-package common.proyectogenerico.dbcomponent.core;
+package common.proyectogenerico.dbcomponent.config;
 
 import java.util.*;
 
@@ -68,19 +68,8 @@ public class DBconfig {
     //IMPORTANTE: 
     //metodo para obtener un identificador unico para la config especifica de la instancia de la BDD (BDD + url + DBname)
     public String getUniqueIdentifier() {
-        return tipoDeBDD + "_" + url + "_" + extractDBname(url);
+        return tipoDeBDD + "_" + url;
     }
-
-    //metodo para extraer el nombre de la base de datos de la url
-
-    private String extractDBname(String url) {
-        //identificar por slash
-        if (url.contains("/")) {
-            return url.substring(url.lastIndexOf('/') + 1);
-        }
-        return "DB_desconocida";
-    }
-
 
     //Getters para otros metodos
 

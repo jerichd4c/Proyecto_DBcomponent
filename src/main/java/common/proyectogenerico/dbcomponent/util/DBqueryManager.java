@@ -8,6 +8,7 @@ public class DBqueryManager {
     private static final Properties queries = new Properties();
 
     //constructor para cargar el .properties de queries
+    //NT: LLAMA AUTOMATICAMENTE AL METODO CARGAR QUERIES  QUE ESTA ABAJO
     static {
         cargarQueries();
     }
@@ -38,6 +39,7 @@ public class DBqueryManager {
 
         Properties properties= new Properties();
         properties.load(input);
+        //putAll coloca todas las propiedas a la var properties
         queries.putAll(properties);
 
         } catch (Exception e) {
@@ -45,7 +47,7 @@ public class DBqueryManager {
         }
     }
 
-    //metodo para obtener las queries una vez ya cargado el archivo 
+    //metodo para ejecutar/obtener las queries (dbType es por si se quiere aplicar una funcion especifica de una BDD, sin embargo, es opcional)
 
     public static String obtenerQueries(String dbType, String queryKey) {
         //normaliza el nombre de la llame a buscar en el archivo (lo transforma en minusculas)

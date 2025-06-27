@@ -1,8 +1,8 @@
 package common.proyectogenerico;
 
-import common.proyectogenerico.dbcomponent.core.*;
+import common.proyectogenerico.dbcomponent.config.*;
 import common.proyectogenerico.dbcomponent.implementation.*;
-import common.proyectogenerico.dbcomponent.util.DBqueryManager;
+import common.proyectogenerico.dbcomponent.util.*;
 import java.sql.*;
 
 //demostracion del uso del DBcomponent
@@ -10,17 +10,19 @@ public class appDemo {
     public static void main(String[] args) {
 
         //configurar dos BDD diferentes
+        //GENERICA: bdd RELACIONAL estandard (postgres, mysql, sqlite, oracle, sqlserver)
         DBconfig config1 = DBconfigLoader.cargarConfig("/primarydbconfig.properties", DBtype.GENERICA);
         DBconfig config2 = DBconfigLoader.cargarConfig("/secondarydbconfig.properties", DBtype.GENERICA);
+        //mejora visual
+        System.out.println(" ");
 
 
-        //declarar variables para no ser afectadas por try-catch y finally
-         componenteGenerico primaryDB = null;
+        //declarar variables para no ser afectadas por try-catch y el finally
+        componenteGenerico primaryDB = null;
         componenteGenerico secondaryDB = null;
 
-
-
         try {
+        //IMPORTANTE: esto NO seran los metodos, esto solo son metodos que agrupan las funcionalidades basicas del DBcomponent 
 
         //crear los componentes
 
@@ -33,15 +35,19 @@ public class appDemo {
             secondaryDB.inicializar();
 
             //verificar las propiedades y relaciones entre las BDD  
+            System.out.println("===1. Verificando base de datos===");
             verificarBBD(primaryDB, secondaryDB);
 
             //hacer operaciones de la BDD 1
+            System.out.println("===2. Haciendo operaciones CRUD (primera BDD)===");
             hacerOperacionesCRUDs(primaryDB);
 
             //hacer operaciones de la BDD 2
+            System.out.println("===3. Haciendo operaciones de registro_actividades (segunda BDD)===");
             hacerOperacionesLOGs(secondaryDB);
 
             //testear transacciones
+            System.out.println("===4. Haciendo operaciones de transacciones entre diferentes BDDs)===");
             hacerOperacionesTransacciones(primaryDB, secondaryDB);
             
         } catch (SQLException e) {
@@ -68,12 +74,12 @@ public class appDemo {
         String DBname1 = extractDBname(bdd1.getConfig().getUrl());
         String DBname2 = extractDBname(bdd2.getConfig().getUrl());
 
-        System.out.println("Base de datos 1: " + DBname1);
-        System.out.println("Base de datos 2: " + DBname2);
+        System.out.println("Nombre de base de datos 1: " + DBname1);
+        System.out.println("Nombre de base de datos 2: " + DBname2);
 
         //diferentes casos para la verificacion
 
-        //caso 1: si ambos componentes apuntan a la MISMA bdd (ej: dbcomp1 y 2 apuntan a bdd registro)
+        //caso 1: si ambos componentes apuntan a la MISMA bdd (ej: dbcomp1 y 2 apuntan a bdd registro_actividades)
         if (DBname1.equals(DBname2)) {
             System.out.println("Los DBcomponent apuntan a la MISMA BDD");
         } else {
@@ -85,8 +91,10 @@ public class appDemo {
     //metodo para realizar las operacion CRUD basicas del DBcomponent (en BDD 1)
     private static void hacerOperacionesCRUDs(componenteGenerico bdd) throws SQLException {
     
-         System.out.println("---Haciendo operaciones CRUD en: " + bdd.getDBidentifier() + "---");
+        String DBName = extractDBname(bdd.getConfig().getUrl());
 
+        System.out.println("---Haciendo operaciones CRUDs en: " + DBName + "---");
+         
          //1. crear las tablas en BDD 1
         bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "create_usuarios_table"));
         System.out.println("Tabla 'usuarios' creada!");
@@ -107,13 +115,16 @@ public class appDemo {
                 System.out.println(rs.getString("name") + " - " + rs.getString("email"));
             }
         }
+        System.out.println(" ");
     }
 
     //metodo para realizar las operacion LOGs basicas del DBcomponent (en BDD 2)
     //NT: logs=registros
     private static void hacerOperacionesLOGs(componenteGenerico bdd) throws SQLException {
-    
-         System.out.println("---Haciendo operaciones LOGs en: " + bdd.getDBidentifier() + "---");
+        
+        String DBName = extractDBname(bdd.getConfig().getUrl());
+
+         System.out.println("---Haciendo operaciones LOGs en: " + DBName + "---");
          
          //1. crear la tabla de logs en BDD 2
          bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "create_registros_table"));
@@ -134,6 +145,7 @@ public class appDemo {
                 System.out.println(rs.getString("usuario_id") + " - " + rs.getString("accion") + " - " + rs.getTimestamp("timestamp"));
             }
         }
+        System.out.println(" ");
     }
 
     //metodo para demostrar los multiples metodos de transacciones
@@ -153,24 +165,39 @@ public class appDemo {
 
             //registrar creacion en BDD 2
             String insertarRegistro = DBqueryManager.obtenerQueries("genericdb", "insert_registro");
-            secondaryDB.ejecutarUpdate(insertarRegistro, 2, "usuario_creado");
+            secondaryDB.ejecutarUpdate(insertarRegistro, 3, "usuario_creado");
             System.out.println("Registro de creacion insertado!");
 
-            //obtener el último ID insertado en usuarios
-            int ultimoUsuarioID;
-            try (ResultSet rs = primaryDB.ejecutarQuery("SELECT MAX(id) FROM usuarios")) {
-                rs.next();
-                //retorna el indice de la columna
-                ultimoUsuarioID = rs.getInt(1);
-            }
-
-            secondaryDB.ejecutarUpdate(insertarRegistro, ultimoUsuarioID, "usuario_creado");
+            secondaryDB.ejecutarUpdate(insertarRegistro, 4, "usuario_creado");
             System.out.println("Registro de creación 'usuario_creado' insertado!");
 
             //confirmar transacciones (commit)
             primaryDB.commitTransaccion();
             secondaryDB.commitTransaccion();
+
+            //mostrar tablas en consola:
             System.out.println("Transacciones commiteadas exitosamente!");
+
+            //NT: verificar nombre de variables de las BDDs para no seleccionar una tabla inexistente
+
+            //tabla de BDD1:
+            System.out.println("Usuarios:"); 
+            try (ResultSet rs= primaryDB.ejecutarQuery(DBqueryManager.obtenerQueries("genericdb", "select_usuarios"))) {
+                //recorrer el resultSet hasta que ya no haya datos
+                while (rs.next()) {
+                    System.out.println(rs.getString("name") + " - " + rs.getString("email"));
+                }
+            }  
+
+            //tabla de BDD2:
+            System.out.println("Registros:"); 
+            try (ResultSet rs= secondaryDB.ejecutarQuery(DBqueryManager.obtenerQueries("genericdb", "select_registros"))) {
+                //recorrer el resultSet hasta que ya no haya datos
+                while (rs.next()) {
+                    System.out.println(rs.getString("usuario_id") + " - " + rs.getString("accion") + " - " + rs.getTimestamp("timestamp"));
+                }
+            }  
+
         } catch (SQLException e) {
             //Si hay un error en la transaccion, cancelarla (rollback)
             primaryDB.rollbackTransaccion();
@@ -178,6 +205,7 @@ public class appDemo {
             System.out.println("Error en la transaccion, haciendo rollback!");
             throw e;
         }
+        System.out.println(" ");
     }
 
     //metodo para borrar las pruebas hechas y cerrar los componentes (incluye shutdown)
@@ -188,9 +216,12 @@ public class appDemo {
         for (componenteGenerico bdd : BDDs) {
             //si la BDD no esta vacia, borrar tablas
             if (bdd !=null) {
+            //sysout para orientacion en la consola
+            String dbName = extractDBname(bdd.getConfig().getUrl());
+            System.out.println("Limpiando: " + dbName);
             try {
                 //le hace CASCADE a las dos tablas para borrarlas
-                //se ejecutan las actualizaciones en orden inverso a la creación (primero eliminar dependencias)
+                //se ejecutan las actualizaciones en orden inverso a la creación (de esta manera se evita que tablas se eliminen por dependencias)
 
                     bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "delete_tabla_registros"));
 
@@ -206,11 +237,12 @@ public class appDemo {
         } catch (Exception e) {
            System.out.println("ERROR: " + e.getMessage());
         }
+        System.out.println(" ");
     }
 
     //auxiliar: obtener nombre de la base de datos de la url
 
-    // Método auxiliar para extraer nombre de BD de la URL
+    // Método auxiliar para extraer nombre de BD de la URL, mismo metodo que en DBconfig
     private static String extractDBname(String url) {
         if (url.contains("/")) {
             String temp = url.substring(url.lastIndexOf('/') + 1);

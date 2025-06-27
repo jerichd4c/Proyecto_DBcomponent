@@ -1,4 +1,4 @@
-package common.proyectogenerico.dbcomponent.core;
+package common.proyectogenerico.dbcomponent.config;
 
 import java.io.*;
 import java.util.*;
@@ -7,13 +7,13 @@ import java.util.*;
 public class DBconfigLoader {
     public static DBconfig cargarConfig(String path, DBtype bdd) {
 
-        System.out.println("Buscando archivo de configuración");
+        System.out.println("Buscando archivo de configuración"+ path);
 
         InputStream input = null;
 
         try {
         
-        //buscar .properties desde el sistema de archivos
+        //buscar .properties desde el sistema de archivos para BDD especifica
         if (input == null) {
             File file = new File("src/main/resources/" + path);
             if (file.exists()) {

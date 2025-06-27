@@ -1,6 +1,6 @@
 package common.proyectogenerico.dbcomponent.pool;
 
-import common.proyectogenerico.dbcomponent.core.*;
+import common.proyectogenerico.dbcomponent.config.*;
 import java.sql.*;
 import java.util.*;
 
@@ -11,21 +11,7 @@ public class DBpoolDeConexiones {
     private final LinkedList<Connection> conexionesEnUso= new LinkedList<>();
     private DBconfig config;
 
-    //construtor vacio para ya crear la instancia antes de todos los procesos
-    //private DBpoolDeConexiones(){}
-
-    // //metodo para asegurar una sola instancia del pool por BDD
-    // public static synchronized DBpoolDeConexiones getInstance() {
-    //     //si la instancia no existe, se crea
-    //     if (instancia == null) {
-    //         instancia = new DBpoolDeConexiones();
-    //     }
-    //     //si no, la devuelve
-    //     return instancia;
-    // }
-
-    //nuevo constructor del pool de conexiones
-
+    //constructor del pool de conexiones usando la config del .properties (min, max, growth de conexs)
     public DBpoolDeConexiones(DBconfig config)  {
         this.config= config;
         
