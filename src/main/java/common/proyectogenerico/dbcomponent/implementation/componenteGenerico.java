@@ -16,14 +16,16 @@ public class componenteGenerico implements DBinterface {
 
     //dos maneras de cargar la configuracion:
 
-    //constructor por defecto (sin parametros)
-    //se usa cuando la configuracion viene de un archivo (.properties)
+    //constructor con parametros personalizados
+
     public componenteGenerico() {
         this.config = new DBconfig();
         this.poolManager = new DBpoolManager();
     }
 
-    //constructor con parametros personalizados
+    //constructor por defecto (sin parametros)
+    //se usa cuando la configuracion viene de un archivo (.properties)
+
     public componenteGenerico(DBconfig config) {
         //la config viene de una config proporcionada por el usuario, no el . properties (usar para pruebas)
         this.config = config;

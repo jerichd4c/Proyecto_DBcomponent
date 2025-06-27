@@ -22,7 +22,7 @@ public class DBqueryManager {
 
         try {
         
-        //buscar .properties desde el sitema de archivos
+        //buscar .properties desde el sistema de archivos
         //mismo folder que el .properties de configuración
 
         if (input == null) {
@@ -38,6 +38,7 @@ public class DBqueryManager {
 
         Properties properties= new Properties();
         properties.load(input);
+        queries.putAll(properties);
 
         } catch (Exception e) {
             throw new RuntimeException("No se pudo cargar el archivo de queries");
