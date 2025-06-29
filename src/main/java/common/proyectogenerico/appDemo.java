@@ -5,8 +5,23 @@ import common.proyectogenerico.dbcomponent.implementation.*;
 import common.proyectogenerico.dbcomponent.util.*;
 import java.sql.*;
 
-//demostracion del uso del DBcomponent
+/**
+ * Clase de demostración principal para el componente de base de datos.
+ * <p>
+ * Esta clase muestra las capacidades del DBComponent mediante operaciones CRUD,
+ * gestión de LOGs y transacciones entre BDDs.
+ * </p>
+ */
+
 public class appDemo {
+
+    /**
+     * Punto de entrada principal de la aplicación.
+     * <p>
+     * Configura dos bases de datos, realiza operaciones de demostración y limpia los recursos.
+     * </p>
+     */
+
     public static void main(String[] args) {
 
         //configurar dos BDD diferentes
@@ -57,6 +72,18 @@ public class appDemo {
         }
     }
 
+    /**
+     * Verifica y compara las bases de datos configuradas.
+     * <p>
+     * Muestra información básica de conexión y determina si los componentes
+     * apuntan a la misma base de datos o a bases de datos diferentes.
+     * </p>
+     * 
+     * param bdd1 Primer componente de base de datos
+     * param bdd2 Segundo componente de base de datos
+     * throws SQLException Si ocurre un error al acceder a la información de la base de datos
+     */
+
     //metodo para verficiar las propiedades y relaciones entre las BDD
     private static void verificarBBD(componenteGenerico bdd1, componenteGenerico bdd2) throws SQLException {
         
@@ -88,6 +115,18 @@ public class appDemo {
         System.out.println(" ");
     }
 
+    /**
+     * Realiza operaciones CRUD básicas en la base de datos especificada.
+     * <p>
+     * - Crea la tabla de usuarios
+     * - Inserta un usuario de prueba
+     * - Consulta y muestra los usuarios existentes
+     * </p>
+     * 
+     * param bdd Componente de base de datos donde se ejecutarán las operaciones
+     * throws SQLException Si ocurre un error en las operaciones de base de datos
+     */
+
     //metodo para realizar las operacion CRUD basicas del DBcomponent (en BDD 1)
     private static void hacerOperacionesCRUDs(componenteGenerico bdd) throws SQLException {
     
@@ -118,13 +157,25 @@ public class appDemo {
         System.out.println(" ");
     }
 
+    /**
+     * Realiza operaciones de registro (logs) en la base de datos especificada.
+     * <p>
+     * - Crea la tabla de registros
+     * - Inserta registros de actividad de prueba
+     * - Consulta y muestra los registros existentes
+     * </p>
+     * 
+     * param bdd Componente de base de datos donde se ejecutarán las operaciones
+     * throws SQLException Si ocurre un error en las operaciones de base de datos
+     */
+
     //metodo para realizar las operacion LOGs basicas del DBcomponent (en BDD 2)
     //NT: logs=registros
     private static void hacerOperacionesLOGs(componenteGenerico bdd) throws SQLException {
         
         String DBName = extractDBname(bdd.getConfig().getUrl());
 
-         System.out.println("---Haciendo operaciones LOGs en: " + DBName + "---");
+         System.out.println("---Haciendo operaciones en tabla registro en: " + DBName + "---");
          
          //1. crear la tabla de logs en BDD 2
          bdd.ejecutarUpdate(DBqueryManager.obtenerQueries("genericdb", "create_registros_table"));
@@ -147,6 +198,19 @@ public class appDemo {
         }
         System.out.println(" ");
     }
+
+    /**
+     * Demuestra transacciones distribuidas entre dos bases de datos.
+     * <p>
+     * - Inserta un usuario en la primera base de datos
+     * - Registra la creación en la segunda base de datos
+     * - Muestra los resultados de ambas operaciones
+     * </p>
+     * 
+     * param primaryDB Componente de base de datos principal (para usuarios)
+     * param secondaryDB Componente de base de datos secundario (para registros)
+     * throws SQLException Si ocurre un error durante las transacciones
+     */
 
     //metodo para demostrar los multiples metodos de transacciones
     private static void hacerOperacionesTransacciones(componenteGenerico primaryDB, componenteGenerico secondaryDB) throws SQLException {
@@ -208,6 +272,15 @@ public class appDemo {
         System.out.println(" ");
     }
 
+    /**
+     * Limpia las tablas de prueba en las bases de datos.
+     * <p>
+     * Elimina las tablas creadas durante la demostración y cierra las conexiones.
+     * </p>
+     * 
+     * param BDDs Componentes de base de datos a limpiar
+     */
+
     //metodo para borrar las pruebas hechas y cerrar los componentes (incluye shutdown)
     private static void limpiarTablas(componenteGenerico... BDDs) {
         System.out.println("---Programa finalizado, Limpiando pruebas---");
@@ -242,13 +315,23 @@ public class appDemo {
 
     //auxiliar: obtener nombre de la base de datos de la url
 
+    /**
+     * Extrae el nombre de la base de datos de una URL JDBC.
+     * <p>
+     * Ejemplo: "jdbc:postgresql://localhost:5432/myDB" → "myDB"
+     * </p>
+     * 
+     * param url URL de conexión a la base de datos
+     * return Nombre de la base de datos extraído de la URL
+     */
+
     // Método auxiliar para extraer nombre de BD de la URL, mismo metodo que en DBconfig
     private static String extractDBname(String url) {
         if (url.contains("/")) {
             String temp = url.substring(url.lastIndexOf('/') + 1);
             // Eliminar parámetros adicionales (si los hay)
-            if (temp.contains("?")) {
-                return temp.substring(0, temp.indexOf('?'));
+            if (temp.contains("/")) {
+                return temp.substring(0, temp.indexOf('/'));
             }
             return temp;
     }
